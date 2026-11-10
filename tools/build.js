@@ -4,11 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('/opt/npm-tools/node_modules/sharp');
 const ROOT = path.join(__dirname, '..');
-const VERSION = 'ms-v4';
+const VERSION = 'ms-v5';
 const rd = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 const css = rd('src/style.css');
-const js = ['core', 'map', 'explore', 'home', 'main'].map((f) => `// ---- ${f}.js ----\n` + rd(`src/${f}.js`)).join('\n');
+const js = ['core', 'map', 'explore', 'games', 'games-list', 'home', 'main'].map((f) => `// ---- ${f}.js ----\n` + rd(`src/${f}.js`)).join('\n');
 const world = rd('data/world.json'), flags = rd('data/flags.json'), icons = rd('data/icons.json');
 const tpl = rd('src/index.html');
 const page = (pwa, noSw) => tpl

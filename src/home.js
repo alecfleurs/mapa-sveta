@@ -20,7 +20,7 @@ SCREENS.home = (() => {
     rankEl = el('div', 'hm-rank'); box.append(rankEl);
     const btns = el('div', 'hm-btns');
     const ex = el('button', 'bigbtn b-explore', '🗺️ Истражи<small>Мапа, државе, заставе</small>'); ex.onclick = () => show('explore');
-    const gm = el('button', 'bigbtn b-games', '🎮 Игре<small>Ускоро</small>'); gm.disabled = true;
+    const gm = el('button', 'bigbtn b-games', '🎮 Игре<small>10 игара, 3 нивоа</small>'); gm.onclick = () => show('games');
     btns.append(ex, gm); box.append(btns);
     root.append(box);
 

@@ -235,5 +235,14 @@ function makeMap(host, opt = {}) {
   const layers = (cls, on) => svg.classList.toggle(cls, !on);
 
   new ResizeObserver(resize).observe(svg);
-  return { svg, flyTo, fitWorld, select, selectRiver, selectMany, layers, resize, zoomBy: (f) => zoomAt(f, cw / 2, ch / 2), get z() { return Math.log2(k / k0); } };
+  // za igre: boja jedne države (null vraća prvobitnu) i oznaka tačno/netačno
+  function setFill(id, f) { const p = paths[id]; if (p) p.setAttribute('fill', f || countryFill(C[id])); }
+  function mark(id, cls) {
+    const c = C[id]; if (!c) return;
+    const e = sv('path', { d: c.d, class: 'gmark ' + cls });
+    gSel.append(e);
+    if (c.small) gSel.append(sv('circle', { cx: c.lx, cy: c.ly, class: 'dot gmark ' + cls }));
+    return e;
+  }
+  return { svg, flyTo, fitWorld, select, selectRiver, selectMany, layers, resize, setFill, mark, clearMarks: () => { gSel.innerHTML = ''; }, zoomBy: (f) => zoomAt(f, cw / 2, ch / 2), get z() { return Math.log2(k / k0); } };
 }
