@@ -116,3 +116,12 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 .srcbox{padding:22px 30px;overflow-y:auto;font-size:18px;line-height:1.5;background:var(--paper);flex:1;touch-action:pan-y}
 .srcbox h2{margin:6px 0}
 .srcbox li{margin:6px 0}
+
+/* ---------- priroda na kartici ---------- */
+.sec-t{font-size:15px;font-weight:900;color:var(--ink2);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px;padding-top:12px;border-top:1.5px dashed var(--line)}
+.ntg{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.nt{background:#EEF6E8;border-radius:16px;padding:8px 8px 10px;text-align:center;min-width:0}
+.nt-ic{width:64px;height:64px;margin:0 auto 2px}
+.nt-ic svg{width:100%;height:100%;display:block}
+.nt-lb{font-size:11px;font-weight:900;color:#4c7a3a;text-transform:uppercase;letter-spacing:.4px}
+.nt-n{font-size:16px;font-weight:900;line-height:1.2;margin-top:2px;overflow-wrap:anywhere}

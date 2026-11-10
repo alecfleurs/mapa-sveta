@@ -55,6 +55,9 @@ SCREENS.sources = (() => {
         <li><b>Називи држава, главни градови, површина, суседи:</b> mledoze/countries (github.com/mledoze/countries), лиценца ODbL.</li>
         <li><b>Број становника:</b> Natural Earth, процена из 2019. године.</li>
         <li><b>Заставе:</b> flag-icons (github.com/lipis/flag-icons), лиценца MIT.</li>
+        <li><b>Животиње, птице, цвеће и дрвеће симболи држава:</b> Wikipedia, листе List of national animals, List of national birds, List of national flowers, List of national trees.</li>
+        <li><b>Највиши врхови:</b> Wikipedia, List of highest points of European countries.</li>
+        <li><b>Слике животиња и биљака:</b> OpenMoji (openmoji.org), лиценца CC BY-SA 4.0. Када нема слике баш те врсте, приказана је општа слика (птица, цвет, дрво, шапе), а назив испод је тачан.</li>
         <li><b>Чињенице о континентима, океанима и рекама:</b> Енциклопедија Британика и Wikipedia, наведено на свакој картици.</li>
       </ul>
       <h2>Границе</h2>

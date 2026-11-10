@@ -49,6 +49,10 @@ const exe = ['/opt/pw-browsers/chromium-1243/chrome-linux64/chrome', '/usr/bin/g
     await pg.evaluate(() => SCREENS.explore.openCountry('SRB')); await pg.waitForTimeout(900);
     const rv = await pg.evaluate(() => [...document.querySelectorAll('.card.on [data-riv]')].map((b) => b.textContent));
     if (!rv.includes('Дунав') || !rv.includes('Сава')) bad('reke Srbije: ' + rv.join(','));
+    const nt = await pg.evaluate(() => [...document.querySelectorAll('.card.on .nt')].map((t) => t.querySelector('svg') ? t.textContent : 'BEZ SLIKE ' + t.textContent));
+    if (nt.length < 4 || nt.some((t) => t.startsWith('BEZ'))) bad('priroda Srbije: ' + nt.join(' | '));
+    await pg.evaluate(() => document.querySelector('.card.on .ntg').scrollIntoView());
+    await pg.screenshot({ path: `${OUT}/${w}x${h}-5b-nature.png` });
     await pg.click('.card.on [data-riv="dunav"]'); await pg.waitForTimeout(600);
     await pg.screenshot({ path: `${OUT}/${w}x${h}-5-danube.png` });
     // mala država: Vatikan

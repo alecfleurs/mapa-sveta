@@ -4,17 +4,17 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('/opt/npm-tools/node_modules/sharp');
 const ROOT = path.join(__dirname, '..');
-const VERSION = 'ms-v1';
+const VERSION = 'ms-v2';
 const rd = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 const css = rd('src/style.css');
 const js = ['core', 'map', 'explore', 'home', 'main'].map((f) => `// ---- ${f}.js ----\n` + rd(`src/${f}.js`)).join('\n');
-const world = rd('data/world.json'), flags = rd('data/flags.json');
+const world = rd('data/world.json'), flags = rd('data/flags.json'), icons = rd('data/icons.json');
 const tpl = rd('src/index.html');
 const page = (pwa, noSw) => tpl
   .replace('<!--PWA-->', () => pwa ? '<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" href="icon-192.png">\n<link rel="apple-touch-icon" href="icon-192.png">' : '')
   .replace('/*CSS*/', () => css)
-  .replace('/*DATA*/', () => `window.WORLD=${world};window.FLAGS=${flags};window.MS_VERSION='${VERSION}';${noSw ? 'window.NO_SW=true;' : ''}`)
+  .replace('/*DATA*/', () => `window.WORLD=${world};window.FLAGS=${flags};window.ICONS=${icons};window.MS_VERSION='${VERSION}';${noSw ? 'window.NO_SW=true;' : ''}`)
   .replace('/*JS*/', () => js);
 
 fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });

@@ -92,7 +92,24 @@ SCREENS.explore = (() => {
     else body += row('🏝️', 'Суседи', 'Нема суседа на копну', 'Свуда око ње је вода.');
     if (c.land) body += row('⛰️', 'Море', 'Нема излаз на море', 'Са свих страна је окружена другим државама.');
     if (rivers.length) body += row('〰️', 'Велике реке', '', '', `<div class="chips">${rivers.map((r) => `<button class="ch nofl" data-riv="${r.id}">${r.n}</button>`).join('')}</div>`);
+    body += natureHtml(c);
     showCard(cont.c === '#E6EEF5' ? '#8FA6BC' : shade(cont.c, -28), head, body);
+  }
+
+  // Животиње, биљке и занимљивости (само проверени подаци из tools/facts)
+  function natureHtml(c) {
+    const x = c.nat; if (!x) return '';
+    const tile = (k, lb) => x[k] ? `<div class="nt"><div class="nt-ic">${(window.ICONS || {})[x[k][1]] || ''}</div><div class="nt-lb">${lb}</div><div class="nt-n">${x[k][0]}</div></div>` : '';
+    const tiles = tile('a', 'Животиња симбол') + tile('b', 'Птица симбол') + tile('g', 'На грбу') + tile('f', 'Цвет симбол') + tile('t', 'Дрво симбол');
+    let h = '';
+    if (tiles) h += `<div class="sec-t">🐾 Природа</div><div class="ntg">${tiles}</div>`;
+    const facts = [];
+    if (x.peak) facts.push(`Највиши врх је ${x.peak[0]}, висок ${fmt(x.peak[1])} m${x.peak[2] ? ' (' + x.peak[2] + ')' : ''}.`);
+    if (x.lang) facts.push(x.lang.includes(' и ') ? `Овде се говоре ${x.lang} језик.` : `Овде се говори ${x.lang} језик.`);
+    if (x.cur) facts.push(`Новац се зове ${x.cur}.`);
+    if (facts.length) h += `<div class="sec-t">💡 Занимљивости</div><ul class="facts">${facts.map((f) => `<li>${f}</li>`).join('')}</ul>`;
+    h += `<div class="src">Извор: Wikipedia (листе националних симбола, највиши врхови), mledoze/countries. Слике: OpenMoji.</div>`;
+    return h;
   }
 
   function openCont(k) {

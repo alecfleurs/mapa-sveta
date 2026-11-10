@@ -269,6 +269,23 @@ for (const [k, b] of Object.entries(BOX)) {
   continents[k].bb = [r1(Math.min(a[0], proj(b[0], b[1])[0])), r1(a[1]), r1(Math.max(z[0], proj(b[2], b[3])[0])), r1(z[1])];
 }
 
+// ---------- Životinje, biljke, činjenice (po kontinentima) ----------
+const FACTS = {};
+for (const f of fs.readdirSync(path.join(__dirname, 'facts'))) Object.assign(FACTS, require('./facts/' + f));
+const iconCodes = new Set();
+for (const c of countries) {
+  const x = FACTS[c.id]; if (!x) continue;
+  c.nat = x;
+  for (const k of ['a', 'b', 'g', 'f', 't']) if (x[k]) iconCodes.add(x[k][1]);
+}
+const icons = {};
+for (const code of iconCodes) {
+  const f = path.join(RAW, 'om/color/svg', code + '.svg');
+  if (!fs.existsSync(f)) { warn.push('nema ikonice ' + code); continue; }
+  icons[code] = fs.readFileSync(f, 'utf8').replace(/<\?xml[^>]*>|<!--[\s\S]*?-->/g, '').replace(/\s*\n\s*/g, ' ').replace(/\s*id="[^"]*"/g, '').trim();
+}
+fs.writeFileSync(path.join(OUT, 'icons.json'), JSON.stringify(icons));
+
 const world = { W: r1(W), H: r1(H), sphere, grat, equator, countries, territories, rivers, lakes: lakeOut, oceans, continents,
   src: 'Natural Earth (javno dobro); mledoze/countries (ODbL); flag-icons (MIT)' };
 fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(world));
@@ -287,6 +304,7 @@ fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(world));
   }
   fs.writeFileSync(path.join(OUT, 'flags.json'), JSON.stringify(flags));
   const sz = (o) => (JSON.stringify(o).length / 1024).toFixed(0) + ' KB';
+  console.log('ikonice', Object.keys(icons).length, (JSON.stringify(icons).length / 1024).toFixed(0) + ' KB', '| države sa prirodom', countries.filter((c) => c.nat).length);
   console.log('države', countries.length, 'teritorije', territories.length, 'reke', rivers.length, 'jezera', lakeOut.length);
   console.log('world.json', sz(world), '| putanje država', sz(countries.map((c) => c.d)), '| zastave', (total / 1024).toFixed(0) + ' KB');
   console.log(warn.join('\n'));
