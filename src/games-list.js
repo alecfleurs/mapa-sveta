@@ -186,7 +186,8 @@ GAMES.push({
     }
     const kinds = level === 1 ? [['a', 'Животиња симбол'], ['b', 'Птица симбол']] : [['a', 'Животиња симбол'], ['b', 'Птица симбол'], ['f', 'Цвет симбол'], ['t', 'Дрво симбол']];
     const items = [];
-    for (const c of W.countries) for (const [k, lb] of kinds) if (c.nat && c.nat[k] && (level === 2 || tierOf(c) <= 2)) items.push({ id: c.id + k, c, k, lb, v: c.nat[k] });
+    const GENERIC = ['1F43E', '1F426', '1F33C', '1F333', '1F332'];
+    for (const c of W.countries) for (const [k, lb] of kinds) if (c.nat && c.nat[k] && (level === 2 || (tierOf(c) <= 2 && !GENERIC.includes(c.nat[k][1])))) items.push({ id: c.id + k, c, k, lb, v: c.nat[k] });
     const list = api.fresh(items, 14);
     quizRun(api, () => {
       const it = list[i++]; if (!it) return null;

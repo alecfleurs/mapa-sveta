@@ -276,6 +276,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 .g-pause .bigbtn{margin:0 auto}
 @media (max-height:650px){.gm-grid{gap:10px;padding:10px}.gm-ic{font-size:36px}.gm-d{font-size:12px}.q-big{font-size:30px}.gflag.big{width:240px;height:180px}.q-name{font-size:22px}.gm-lvbtn{min-height:100px}.g-piece{height:105px}}
 .mapsvg.noSrb .scity,.mapsvg.noSrb .mtn,.mapsvg.noSrb .mtl,.mapsvg.noSrb .sct,.mapsvg.noNames .rivl,.mapsvg.noNames .lakel{display:none}
+.g-end .bigbtn{min-width:260px;padding:0 22px;font-size:30px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1247,7 +1248,8 @@ GAMES.push({
     }
     const kinds = level === 1 ? [['a', 'Животиња симбол'], ['b', 'Птица симбол']] : [['a', 'Животиња симбол'], ['b', 'Птица симбол'], ['f', 'Цвет симбол'], ['t', 'Дрво симбол']];
     const items = [];
-    for (const c of W.countries) for (const [k, lb] of kinds) if (c.nat && c.nat[k] && (level === 2 || tierOf(c) <= 2)) items.push({ id: c.id + k, c, k, lb, v: c.nat[k] });
+    const GENERIC = ['1F43E', '1F426', '1F33C', '1F333', '1F332'];
+    for (const c of W.countries) for (const [k, lb] of kinds) if (c.nat && c.nat[k] && (level === 2 || (tierOf(c) <= 2 && !GENERIC.includes(c.nat[k][1])))) items.push({ id: c.id + k, c, k, lb, v: c.nat[k] });
     const list = api.fresh(items, 14);
     quizRun(api, () => {
       const it = list[i++]; if (!it) return null;
