@@ -20,7 +20,7 @@ const exe = ['/opt/pw-browsers/chromium-1243/chrome-linux64/chrome', '/usr/bin/g
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: true });
     const pg = await ctx.newPage();
     const errs = []; pg.on('pageerror', (e) => errs.push(e.message));
-    await pg.goto(FILE); await pg.waitForTimeout(300);
+    await pg.goto(FILE); await pg.waitForTimeout(300); await pg.click('.wl-go', { force: true }); await pg.waitForTimeout(700);
     await pg.click('.b-games'); await pg.waitForTimeout(300);
     if (w === 1280 && h === 800) await pg.screenshot({ path: `${OUT}/g-menu.png` });
     const nGames = await pg.evaluate(() => GAMES.length);
@@ -28,12 +28,13 @@ const exe = ['/opt/pw-browsers/chromium-1243/chrome-linux64/chrome', '/usr/bin/g
       for (let lv = 0; lv < 3; lv++) {
         const id = await pg.evaluate((gi) => GAMES[gi].id, gi);
         await pg.evaluate(() => show('games'));
-        await pg.click(`.gm-card >> nth=${gi}`); await pg.waitForTimeout(150);
+        await pg.click(`#games .gm-card >> nth=${gi}`); await pg.waitForTimeout(150);
         if (gi === 0 && lv === 0 && w === 1280 && h === 800) await pg.screenshot({ path: `${OUT}/g-levels.png` });
         await pg.click(`.gm-lvbtn >> nth=${lv}`); await pg.waitForTimeout(500);
         let steps = 0, shot = false, clipped = new Set();
         while (steps++ < (QUICK ? 5 : 160)) {
           const st = await pg.evaluate(() => {
+            if (document.querySelector('.in-box')) return 'intro';
             if (document.querySelector('#game .g-end')) return 'end';
             if (document.querySelector('#game .g-pause')) return 'pause';
             if (document.querySelector('#game .q-opt')) return 'quiz';
@@ -52,6 +53,10 @@ const exe = ['/opt/pw-browsers/chromium-1243/chrome-linux64/chrome', '/usr/bin/g
           const cl = await pg.evaluate(() => [...document.querySelectorAll('#game .q-name, #game .q-big, #game .g-clue, #game .g-chip span, #game .g-front span, #game .q-t')]
             .filter((e) => e.offsetParent && (e.scrollWidth > e.clientWidth + 2 || e.getBoundingClientRect().bottom > innerHeight + 1)).map((e) => e.textContent.slice(0, 25)));
           cl.forEach((t) => clipped.add(t));
+          if (st === 'intro') {
+            if (w === 1280 && h === 800 && gi === 0) await pg.screenshot({ path: `${OUT}/g-intro.png` });
+            await pg.click('.in-row .bigbtn:last-child'); await pg.waitForTimeout(150); continue;
+          }
           if (st === 'pause') { await pg.click('#game .g-pause .bigbtn'); await pg.waitForTimeout(200); continue; }
           if (st === 'quiz') {
             // ponekad prvo pogrešan odgovor
@@ -95,6 +100,9 @@ const exe = ['/opt/pw-browsers/chromium-1243/chrome-linux64/chrome', '/usr/bin/g
         const got = await pg.evaluate(() => document.querySelector('#game .g-endst b')?.textContent);
         console.log(`  ${id} ${lv}: ${ended ? 'kraj' : 'ZAGLAVLJENO'} ${got || ''}`);
         if (ended && gi === 0 && lv === 0 && w === 1280 && h === 800) await pg.screenshot({ path: `${OUT}/g-end.png` });
+        if (ended && gi === nGames - 1 && lv === 2) { await pg.evaluate(() => show('diary')); await pg.waitForTimeout(400); await pg.screenshot({ path: `${OUT}/g-${w}x${h}-diary.png` });
+          const ov = await pg.evaluate(() => [...document.querySelectorAll('#diary .di-g span, #diary .di-hr span, #diary .di-bd b')].filter((e) => e.scrollWidth > e.clientWidth + 2).map((e) => e.textContent));
+          if (ov.length) bad('dnevnik, odsečen tekst: ' + ov.slice(0, 4).join(' | ')); }
       }
     }
     if (errs.length) bad('JS greške: ' + [...new Set(errs)].join(' | '));

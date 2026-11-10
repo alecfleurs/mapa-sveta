@@ -45,7 +45,9 @@ SCREENS.explore = (() => {
     const before = rank()[1];
     P.stars++; save(); updStat();
     const after = rank();
-    toast(before !== after[1] ? `${after[2]} Нови чин: ${after[1]}!` : '⭐ Ново откриће! +1', wrap);
+    const nb = checkBadges(null);
+    toast(nb.length ? `${nb[0].ic} Ново признање: ${nb[0].n}!` : before !== after[1] ? `${after[2]} Нови чин: ${after[1]}!` : '⭐ Ново откриће! +1', wrap);
+    if (nb.length || before !== after[1]) confetti(30);
     return true;
   }
 

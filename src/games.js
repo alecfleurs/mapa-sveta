@@ -58,7 +58,9 @@ SCREENS.games = (() => {
     grid.innerHTML = '';
     for (const g of GAMES) {
       const best = (P.best || {})[g.id] || [];
+      const ps = (P.stat || {})[g.id], played = ps ? ps.c : 0, rec = Math.max(0, ...best.filter(Boolean));
       const b = el('button', 'gm-card', `<div class="gm-ic">${g.ic}</div><div class="gm-n">${g.n}</div><div class="gm-d">${g.d}</div>
+        <div class="gm-pl">${played ? `Играно: ${played}${rec ? ' · рекорд ⭐ ' + rec : ''}` : '<span class="gm-new">Нова</span>'}</div>
         <div class="gm-lv">${LEVELS.map((L, i) => `<i style="background:${best[i] ? L.c : '#E3DCCB'}" title="${L.n}"></i>`).join('')}</div>`);
       b.onclick = () => chooseLevel(g);
       grid.append(b);
@@ -86,28 +88,42 @@ SCREENS.games = (() => {
 // Zajednički motor jedne partije
 const GAME = (() => {
   let root, area, stEl, titleEl, cur = null;
+  let helpBtn;
   function ensure() {
     if (root) return;
     root = $('#game');
     stEl = el('div', 'chip-stat');
     const h = header('', stEl); titleEl = $('h1', h);
-    const back = el('button', 'hbtn', '🎮 Игре'); back.onclick = () => { stop(); show('games'); };
+    const homeBtn = h.querySelector('.hbtn'); homeBtn.onclick = () => leave('home');
+    const back = el('button', 'hbtn', '🎮 Игре'); back.onclick = () => leave('games');
     h.insertBefore(back, h.children[1]);
+    helpBtn = el('button', 'hbtn', '❓ Упутство'); helpBtn.onclick = () => cur && showIntro(cur.g, null);
+    h.insertBefore(helpBtn, h.lastChild);
     root.append(h);
     area = el('div', 'g-area'); root.append(area);
   }
+  // излазак из игре која још траје тражи потврду
+  function leave(to) {
+    if (!cur || cur.over) { stop(); show(to); return; }
+    const ov = el('div', 'gm-ov');
+    ov.innerHTML = `<div class="gm-box"><div class="gm-bic">🚪</div><h2>Излазиш из игре?</h2><p class="gm-how">Звездице које си до сада освојио остају. Игра неће бити записана у дневник.</p><div class="hm-btns"></div></div>`;
+    const stay = el('button', 'bigbtn b-explore', 'Остани'); stay.onclick = () => ov.remove();
+    const go = el('button', 'bigbtn b-games', 'Изађи'); go.onclick = () => { ov.remove(); stop(); show(to); };
+    $('.hm-btns', ov).append(stay, go); root.append(ov);
+  }
   function stop() { if (cur && cur.cleanup) cur.cleanup(); cur = null; }
-  function upd() { stEl.innerHTML = `⭐ ${cur ? cur.got : 0} у овој игри · укупно ${P.stars}`; }
+  function upd() { stEl.innerHTML = `⭐ ${cur ? cur.got : 0} · укупно ${P.stars}`; }
   // api koji igra dobija
   function api(g, level) {
-    const st = { got: 0, done: 0, total: 14, cleanup: null, g, level };
+    const st = { got: 0, done: 0, total: 14, cleanup: null, g, level, errors: 0, t0: Date.now(), over: false };
+    P.stat = P.stat || {}; const ps = (P.stat[g.id] = P.stat[g.id] || { s: 0, c: 0, t: 0 }); ps.s++; save();
     cur = st;
     return {
       area, level,
       setTotal: (n) => { st.total = n; },
       // tačno: prvi pokušaj i brzo = 2 zvezdice, prvi pokušaj = 1; netačno: −1 (nikad ispod 0)
       good: (firstTry, fast) => { const n = firstTry ? (fast ? 2 : 1) : 0; st.got += n; P.stars += n; save(); upd(); return n; },
-      bad: () => { if (P.stars > 0) P.stars--; if (st.got > 0) st.got--; save(); upd(); },
+      bad: () => { st.errors++; if (P.stars > 0) P.stars--; if (st.got > 0) st.got--; save(); upd(); },
       remember: (k) => remember(g.id, k),
       fresh: (pool, n, keyOf) => fresh(g.id, pool, n, keyOf),
       onCleanup: (fn) => { st.cleanup = fn; },
@@ -129,30 +145,57 @@ const GAME = (() => {
     $('.gm-box', ov).append(b); area.append(ov);
   }
   function finish() {
-    const st = cur; if (!st) return;
+    const st = cur; if (!st || st.over) return;
+    st.over = true;
+    const max = st.total * 2, before = rank()[1];
     P.best = P.best || {}; const b = (P.best[st.g.id] = P.best[st.g.id] || []);
-    const newBest = st.got > (b[st.level] || 0); if (newBest) b[st.level] = st.got;
-    save(); upd();
-    const r = rank();
+    const prev = b[st.level] || 0, newBest = st.got > prev; if (newBest) b[st.level] = st.got;
+    const ps = P.stat[st.g.id]; ps.c++; ps.t += Math.min(3600000, Date.now() - st.t0);
+    P.hist = P.hist || []; P.hist.unshift({ id: st.g.id, lv: st.level, stars: st.got, max, t: Date.now() }); P.hist = P.hist.slice(0, 40);
+    save();
+    const nb = checkBadges({ id: st.g.id, level: st.level, errors: st.errors });
+    upd();
+    const k = rankInfo(), up = before !== k.r[1], pct = st.got / max, n = pct >= 0.75 ? 3 : pct >= 0.45 ? 2 : 1;
+    confetti(up || nb.length ? 60 : 36);
     area.innerHTML = '';
-    const box = el('div', 'g-end', `<div class="gm-bic">${st.got >= st.total ? '🏆' : '🎉'}</div><h2>Крај игре!</h2>
-      <p class="g-endst">Освојио си <b>⭐ ${st.got}</b>${newBest ? ' <span class="newbadge">Нови рекорд!</span>' : ''}</p>
-      <p class="gm-how">Твој чин: ${r[2]} ${r[1]} · укупно ⭐ ${P.stars}</p>`);
+    const box = el('div', 'g-end', `<div class="g-bigst">${'★'.repeat(n)}<span>${'★'.repeat(3 - n)}</span></div><h2>Браво, Андрија!</h2>
+      <p class="g-endst">Освојио си <b>⭐ ${st.got}</b> од ${max} звездица${newBest ? ' <span class="newbadge">Нови рекорд!</span>' : ''}</p>
+      <p class="gm-how">${newBest ? 'Ово је твој најбољи резултат у овој игри.' : 'Твој рекорд у овој игри: ⭐ ' + prev + '.'}${st.errors === 0 ? ' Ниједне грешке!' : ''}</p>
+      <div class="rk-box"><div class="rk-ic">${k.r[2]}</div><div><b>${up ? 'Нови чин: ' : 'Твој чин: '}${k.r[1]}</b><span> · укупно ⭐ ${P.stars}</span>${rankMeter()}</div></div>
+      ${nb.length ? `<div class="g-nb"><b>Ново признање!</b> ${nb.map((x) => `<span>${x.ic} ${x.n}</span>`).join('')}</div>` : ''}`);
     const row = el('div', 'hm-btns');
     const again = el('button', 'bigbtn b-explore', '🔁 Опет'); again.onclick = () => start(st.g, st.level);
     const other = el('button', 'bigbtn b-games', '🎮 Друга игра'); other.onclick = () => { stop(); show('games'); };
     row.append(again, other); box.append(row); area.append(box);
     if (st.cleanup) st.cleanup(); st.cleanup = null;
   }
+  // упутство корак по корак; први пут се приказује пре игре
+  function showIntro(g, done) {
+    const steps = g.intro || [];
+    if (!steps.length) { if (done) done(); return; }
+    let i = 0;
+    const ov = el('div', 'gm-ov');
+    const draw = () => {
+      const [vis, txt] = steps[i], last = i === steps.length - 1;
+      ov.innerHTML = `<div class="gm-box in-box"><div class="in-vis">${vis}</div><div class="in-txt"><div class="in-guide"><div class="in-pen">${icon('1F427')}</div><div class="in-bubble">${txt}</div></div>
+        <div class="in-dots">${steps.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</div><div class="in-row"></div></div></div>`;
+      const row = $('.in-row', ov);
+      if (i > 0) { const bk = el('button', 'bigbtn b-games in-btn', 'Назад'); bk.onclick = () => { i--; draw(); }; row.append(bk); } else row.append(el('span'));
+      const nx = el('button', 'bigbtn b-explore in-btn', last ? (done ? 'Крени!' : 'Разумем') : 'Даље ▶');
+      nx.onclick = () => { if (last) { P.intro = P.intro || {}; P.intro[g.id] = 1; save(); ov.remove(); if (done) done(); } else { i++; draw(); } };
+      row.append(nx);
+    };
+    draw(); (root || $('#games')).append(ov);
+  }
   function start(g, level) {
     ensure(); stop();
     show('game');
     titleEl.textContent = g.n + ' · ' + LEVELS[level].n;
-    area.innerHTML = '';
-    const a = api(g, level); upd();
-    g.start(level, a);
+    area.innerHTML = ''; upd();
+    const go = () => { const a = api(g, level); upd(); g.start(level, a); };
+    if (!(P.intro || {})[g.id]) showIntro(g, go); else go();
   }
-  return { start };
+  return { start, showIntro };
 })();
 SCREENS.game = { enter() {} };
 

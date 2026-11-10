@@ -18,7 +18,7 @@ const exe = ['/opt/pw-browsers/chromium-1243/chrome-linux64/chrome', '/usr/bin/g
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: true, deviceScaleFactor: 1 });
     const pg = await ctx.newPage();
     const errs = []; pg.on('pageerror', (e) => errs.push(e.message)); pg.on('console', (m) => m.type() === 'error' && !/fonts|ERR_TUNNEL|ERR_INTERNET/.test(m.text()) && errs.push(m.text()));
-    await pg.goto(FILE); await pg.waitForTimeout(500);
+    await pg.goto(FILE); await pg.waitForTimeout(500); await pg.screenshot({ path: `${OUT}/${w}x${h}-0-welcome.png` }); await pg.click('.wl-go', { force: true }); await pg.waitForTimeout(700);
     await pg.screenshot({ path: `${OUT}/${w}x${h}-1-home.png` });
     // dugmad i tekst na početnoj moraju da stanu
     const over = await pg.evaluate(() => [...document.querySelectorAll('#home .hm-box, #home .bigbtn, .hm-reset, .hm-src')].filter((e) => { const r = e.getBoundingClientRect(); return r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight || e.scrollWidth > e.clientWidth + 1; }).map((e) => e.className));

@@ -11,12 +11,53 @@ const flagSrc = (id) => FLAGS[id] ? 'data:image/webp;base64,' + FLAGS[id] : '';
 
 // ---------- napredak (localStorage, jedan ključ) ----------
 const KEY = 'ms1';
-let P = { visited: {}, seen: {}, stars: 0 };
+const freshP = () => ({ visited: {}, seen: {}, stars: 0, stat: {}, hist: [], badges: [], best: {}, recent: {}, intro: {} });
+let P = freshP();
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === 'object') P = Object.assign(P, s); } catch (e) {}
 function save() { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} }
-function resetProgress() { P = { visited: {}, seen: {}, stars: 0 }; save(); }
-const RANKS = [[0, 'Путник', '🎒'], [15, 'Истраживач', '🧭'], [40, 'Морепловац', '⛵'], [80, 'Капетан', '🚢'], [130, 'Пилот', '✈️'], [195, 'Глобтротер', '🌍']];
+function resetProgress() { P = freshP(); save(); }
+const RANKS = [[0, 'Путник', '🎒'], [30, 'Истраживач', '🧭'], [100, 'Морепловац', '⛵'], [250, 'Капетан', '🚢'], [500, 'Пилот', '✈️'], [1000, 'Глобтротер', '🌍'], [2000, 'Астронаут', '🚀']];
 function rank() { let r = RANKS[0]; for (const x of RANKS) if (P.stars >= x[0]) r = x; return r; }
+// чин, следећи чин, колико још и део пута до њега (0–1)
+function rankInfo() {
+  const i = RANKS.indexOf(rank()), r = RANKS[i], nx = RANKS[i + 1] || null;
+  return { r, nx, left: nx ? nx[0] - P.stars : 0, frac: nx ? (P.stars - r[0]) / (nx[0] - r[0]) : 1 };
+}
+const rankMeter = () => { const k = rankInfo(); return `<div class="rk-meter"><i style="width:${Math.round(k.frac * 100)}%"></i></div><small>${k.nx ? `још ⭐ ${k.left} до чина ${k.nx[2]} ${k.nx[1]}` : 'Највиши чин!'}</small>`; };
+
+// ---------- признања ----------
+const seenCount = (pre) => Object.keys(P.seen).filter((k) => k.startsWith(pre)).length;
+const BADGES = [
+  { id: 'prvi', ic: '🎈', n: 'Први корак', d: 'Заврши прву игру.', t: () => (P.hist || []).length >= 1 },
+  { id: 'istr50', ic: '🧭', n: 'Мали истраживач', d: 'Истражи 50 држава на мапи.', t: () => visitedCount() >= 50 },
+  { id: 'istr100', ic: '🗺️', n: 'Пола света', d: 'Истражи 100 држава на мапи.', t: () => visitedCount() >= 100 },
+  { id: 'kont', ic: '🌍', n: 'Сви континенти', d: 'Отвори картице свих 7 континената.', t: () => seenCount('c_') >= 7 },
+  { id: 'okeani', ic: '🌊', n: 'Морепловац', d: 'Отвори картице свих 5 океана.', t: () => seenCount('o_') >= 5 },
+  { id: 'cuda', ic: '🗿', n: 'Ловац на чуда', d: 'Отвори 20 знаменитости на мапи.', t: () => seenCount('lm_') >= 20 },
+  { id: 'srbija', ic: '🏰', n: 'Знам своју земљу', d: 'Отвори 10 знаменитости и планина Србије.', t: () => seenCount('ss_') + seenCount('mt_') >= 10 },
+  { id: 'bezgreske', ic: '🎯', n: 'Без грешке', d: 'Заврши игру без иједне грешке.', t: (g) => g && g.errors === 0 },
+  { id: 'majstor', ic: '🏆', n: 'Мајстор', d: 'Заврши неку игру на нивоу Најтеже.', t: (g) => g && g.level === 2 },
+  { id: 'svestrani', ic: '🎮', n: 'Свестрани', d: 'Одиграј свих 10 игара.', t: () => GAMES_IDS().every((id) => P.stat && P.stat[id] && P.stat[id].c > 0) },
+  { id: 'zvezde', ic: '⭐', n: 'Звездани', d: 'Скупи 500 звездица.', t: () => P.stars >= 500 },
+];
+const GAMES_IDS = () => (typeof GAMES !== 'undefined' ? GAMES.map((g) => g.id) : []);
+// враћа нова признања (и чува их)
+function checkBadges(g) {
+  P.badges = P.badges || [];
+  const nb = BADGES.filter((b) => !P.badges.includes(b.id) && b.t(g));
+  nb.forEach((b) => P.badges.push(b.id));
+  if (nb.length) save();
+  return nb;
+}
+function confetti(n = 30) {
+  for (let i = 0; i < n; i++) {
+    const s = el('span', 'confetti', '★');
+    s.style.left = Math.random() * 100 + 'vw'; s.style.setProperty('--dx', (Math.random() * 240 - 120) + 'px'); s.style.setProperty('--r', (Math.random() * 720 - 360) + 'deg');
+    s.style.animationDelay = Math.random() * 0.5 + 's'; s.style.fontSize = 22 + Math.random() * 26 + 'px';
+    s.style.color = ['#F5B700', '#E2574C', '#4E8FD8', '#3BAA5C', '#FF8A3D'][Math.floor(Math.random() * 5)];
+    document.body.append(s); setTimeout(() => s.remove(), 3200);
+  }
+}
 const visitedCount = () => Object.keys(P.visited).filter((k) => C[k]).length;
 
 // ---------- srpski brojevi i padeži ----------
