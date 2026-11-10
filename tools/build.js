@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('/opt/npm-tools/node_modules/sharp');
 const ROOT = path.join(__dirname, '..');
-const VERSION = 'ms-v2';
+const VERSION = 'ms-v3';
 const rd = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 const css = rd('src/style.css');

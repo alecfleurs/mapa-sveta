@@ -107,8 +107,10 @@ SCREENS.explore = (() => {
     if (x.peak) facts.push(`Највиши врх је ${x.peak[0]}, висок ${fmt(x.peak[1])} m${x.peak[2] ? ' (' + x.peak[2] + ')' : ''}.`);
     if (x.lang) facts.push(x.lang.includes(' и ') ? `Овде се говоре ${x.lang} језик.` : `Овде се говори ${x.lang} језик.`);
     if (x.cur) facts.push(`Новац се зове ${x.cur}.`);
+    if (x.known) h += `<div class="sec-t">🏛️ Позната је по</div><ul class="known">${x.known.map((k) => `<li>${k}</li>`).join('')}</ul>`;
+    if (x.people) h += `<div class="sec-t">⭐ Познати људи</div><div class="ppl">${x.people.map(([n, r]) => `<div class="pp"><b>${n}</b><span>${r}</span></div>`).join('')}</div>`;
     if (facts.length) h += `<div class="sec-t">💡 Занимљивости</div><ul class="facts">${facts.map((f) => `<li>${f}</li>`).join('')}</ul>`;
-    h += `<div class="src">Извор: Wikipedia (листе националних симбола, највиши врхови), mledoze/countries. Слике: OpenMoji.</div>`;
+    h += `<div class="src">Извор: Wikipedia (листе националних симбола, највиши врхови, чланци о местима и људима), mledoze/countries. Слике: OpenMoji.</div>`;
     return h;
   }
 
