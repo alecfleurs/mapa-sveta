@@ -278,15 +278,57 @@ for (const c of countries) {
   c.nat = x;
   for (const k of ['a', 'b', 'g', 'f', 't']) if (x[k]) iconCodes.add(x[k][1]);
 }
+// ---------- Znamenitosti, životinje na mapi, detalji Srbije ----------
+const LM = require('./landmarks.js');
+const CUSTOM = require('./custom-icons.js');
+const P2 = ([la, lo]) => proj(lo, la).map(r1);
+const landmarks = LM.world.map(([id, n, ll, ic, cc, fact, wonder]) => { iconCodes.add(ic); return { id, n, xy: P2(ll), ic, cc, fact, w: wonder ? 1 : 0 }; });
+const animals = LM.animals.map(([n, ic, pts, fact]) => { iconCodes.add(ic); return { n, ic, pts: pts.map(P2), fact }; });
+const srb = {
+  cities: LM.srbCities.map(([n, la, lo, t]) => ({ n, xy: P2([la, lo]), t })),
+  mountains: LM.srbMountains.map(([n, peak, h, la, lo, approx]) => { iconCodes.add('1F3D4'); return { n, peak, h, xy: P2([la, lo]), approx: approx ? 1 : 0 }; }),
+  sights: LM.srbSights.map(([id, n, ll, ic, fact]) => { iconCodes.add(ic); return { id, n, xy: P2(ll), ic, fact }; }),
+};
+// reke Srbije iz 10m skupa
+{
+  const re10 = J('nev/geojson/ne_10m_rivers_europe.geojson');
+  const inS = ([x, y]) => x > 18.8 && x < 23.1 && y > 41.8 && y < 46.25;
+  for (const [src, n] of Object.entries(LM.srbRivers)) {
+    const lines = [];
+    for (const f of re10.features) if (f.properties.name === src) for (const l of linesOf(f.geometry)) if (l.some(inS)) lines.push(l);
+    if (!lines.length) { warn.push('nema reke ' + src); continue; }
+    const pth = lineToPath(lines, 0.05);
+    rivers.push({ id: 'srb_' + src.toLowerCase().replace(/[^a-z]/g, ''), n, fact: null, d: pth.d, lx: pth.lx, ly: pth.ly, len: r1(pth.len), thru: ['SRB'], minor: 1 });
+  }
+}
+// detaljnije (10m) granice Srbije i suseda
+{
+  const ne10 = J('nev/geojson/ne_10m_admin_0_countries.geojson');
+  const want = new Set(LM.detail10m);
+  const g10 = {};
+  for (const f of ne10.features) {
+    const p = f.properties; const id = SR.merge[p.ADM0_A3] || p.ISO_A3_EH;
+    if (!want.has(id)) continue;
+    (g10[id] = g10[id] || { rings: [], merged: false }).rings.push(...polysOf(f.geometry).flat());
+    if (SR.merge[p.ADM0_A3]) g10[id].merged = true;
+  }
+  for (const c of countries) {
+    const g = g10[c.id]; if (!g) continue;
+    const geo = ringsToPath(g.merged ? dissolve(g.rings) : g.rings, 0.03, 0.05);
+    if (geo.d) c.d = geo.d; else warn.push('10m prazno: ' + c.id);
+  }
+}
+
 const icons = {};
 for (const code of iconCodes) {
+  if (CUSTOM[code]) { icons[code] = CUSTOM[code].replace(/\s*\n\s*/g, ' '); continue; }
   const f = path.join(RAW, 'om/color/svg', code + '.svg');
   if (!fs.existsSync(f)) { warn.push('nema ikonice ' + code); continue; }
   icons[code] = fs.readFileSync(f, 'utf8').replace(/<\?xml[^>]*>|<!--[\s\S]*?-->/g, '').replace(/\s*\n\s*/g, ' ').replace(/\s*id="[^"]*"/g, '').trim();
 }
 fs.writeFileSync(path.join(OUT, 'icons.json'), JSON.stringify(icons));
 
-const world = { W: r1(W), H: r1(H), sphere, grat, equator, countries, territories, rivers, lakes: lakeOut, oceans, continents,
+const world = { W: r1(W), H: r1(H), sphere, grat, equator, countries, territories, rivers, lakes: lakeOut, oceans, continents, landmarks, animals, srb,
   src: 'Natural Earth (javno dobro); mledoze/countries (ODbL); flag-icons (MIT)' };
 fs.writeFileSync(path.join(OUT, 'world.json'), JSON.stringify(world));
 

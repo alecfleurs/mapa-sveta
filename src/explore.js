@@ -11,7 +11,7 @@ SCREENS.explore = (() => {
     wrap = el('div', 'mapwrap'); root.append(wrap);
     map = makeMap(wrap, { onTap });
 
-    hintEl = el('div', 'hint', 'Додирни државу, океан или реку. Рашири два прста да увећаш мапу.');
+    hintEl = el('div', 'hint', 'Додирни државу, сличицу, океан или реку. Рашири два прста да увећаш мапу.');
     wrap.append(hintEl);
 
     const ctl = el('div', 'mctl');
@@ -23,6 +23,8 @@ SCREENS.explore = (() => {
     tog('🔤', 'Имена', 'noNames');
     tog('〰️', 'Реке', 'noRiv');
     tog('⭐', 'Градови', 'noCap');
+    tog('🗿', 'Чуда', 'noLm');
+    tog('🐧', 'Животиње', 'noAn');
     wrap.append(ctl);
 
     const conts = el('div', 'conts');
@@ -53,6 +55,10 @@ SCREENS.explore = (() => {
     else if (r.type === 'ocean') openOcean(r.id);
     else if (r.type === 'river') openRiver(r.id);
     else if (r.type === 'territory') openTerritory(r.id);
+    else if (r.type === 'landmark') openLandmark(W.landmarks.find((l) => l.id === r.id), 'lm_');
+    else if (r.type === 'sight') openLandmark(W.srb.sights.find((l) => l.id === r.id), 'ss_', 'SRB');
+    else if (r.type === 'animal') openAnimal(r.id);
+    else if (r.type === 'mountain') openMountain(r.id);
     else closeCard();
   }
 
@@ -151,6 +157,36 @@ SCREENS.explore = (() => {
     if (r.thru.length) body += `<div class="row"><div class="ic">🚩</div><div><div class="lb">Тече кроз ${r.thru.length === 1 ? 'државу' : 'државе'}</div><div class="chips">${r.thru.map(chip).join('')}</div></div></div>`;
     body += `<div class="src">Извор: Natural Earth (ток реке)${r.fact ? ', Енциклопедија Британика' : ''}</div>`;
     showCard('#1F6FC5', `<h2>${r.n}</h2><div class="full">Река</div>`, body);
+  }
+
+  const icoHtml = (code) => `<div class="lmic">${(window.ICONS || {})[code] || ''}</div>`;
+  function openLandmark(l, pre, cc) {
+    if (!l) return;
+    award(pre + l.id);
+    map.select(null);
+    map.flyTo([l.xy[0] - 6, l.xy[1] - 4, l.xy[0] + 6, l.xy[1] + 4], CARD_W(), 70, pre === 'ss_' ? 26 : 10);
+    const country = l.cc || cc;
+    let body = `<ul class="facts"><li>${l.fact}</li></ul>`;
+    if (country) body += row('🚩', 'Налази се у држави', '', '', `<div class="chips">${chip(country)}</div>`);
+    body += `<div class="src">Извор: Wikipedia (чланак о знаменитости). Слика: OpenMoji или нацртано за ову мапу.</div>`;
+    showCard('#B5702E', `<div class="lmhead">${icoHtml(l.ic)}<div><h2>${l.n}</h2>${l.w ? '<div class="wonder">Једно од седам нових светских чуда</div>' : '<div class="full">Знаменитост</div>'}</div></div>`, body);
+  }
+  function openAnimal(i) {
+    const a = W.animals[i]; if (!a) return;
+    award('an_' + i);
+    map.select(null);
+    const body = `<ul class="facts"><li>${a.fact}</li></ul><div class="src">Сличица показује где ова животиња живи. Слика: OpenMoji.</div>`;
+    showCard('#3E8E5A', `<div class="lmhead">${icoHtml(a.ic)}<div><h2>${a.n}</h2><div class="full">Животиња</div></div></div>`, body);
+  }
+  function openMountain(i) {
+    const m = W.srb.mountains[i]; if (!m) return;
+    award('mt_' + i);
+    map.select(null);
+    map.flyTo([m.xy[0] - 3, m.xy[1] - 2, m.xy[0] + 3, m.xy[1] + 2], CARD_W(), 70, 26);
+    let body = row('🏔️', 'Највиши врх', m.peak, fmt(m.h) + ' m надморске висине');
+    body += row('🚩', 'Налази се у', '', '', `<div class="chips">${chip('SRB')}</div>`);
+    body += `<div class="src">Извор: Wikipedia (List of mountains in Serbia), GeoNames.</div>`;
+    showCard('#7A5A3A', `<div class="lmhead">${icoHtml('1F3D4')}<div><h2>${m.n}</h2><div class="full">Планина</div></div></div>`, body);
   }
 
   function openTerritory(id) {

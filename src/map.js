@@ -11,7 +11,7 @@ function makeMap(host, opt = {}) {
   const gGrat = G();
   W.grat.forEach((d) => gGrat.append(sv('path', { d, class: 'grat' })));
   gGrat.append(sv('path', { d: W.equator, class: 'eq' }));
-  const gTer = G(), gCty = G(), gLake = G(), gRiv = G('rv'), gSel = G(), gCap = G('cp'), gDot = G(), gLbl = G();
+  const gTer = G(), gCty = G(), gLake = G(), gRiv = G('rv'), gSel = G(), gCap = G('cp'), gDot = G(), gSrb = G(), gLbl = G(), gIco = G();
 
   const paths = {};
   W.territories.forEach((t) => {
@@ -54,10 +54,37 @@ function makeMap(host, opt = {}) {
     if (c.small) t.setAttribute('dy', '1.3em');
   });
   W.countries.forEach((c) => { if (c.capXY) addL(c.capXY[0], c.capXY[1], ' ' + c.cap, 'capl cp', 2.3, 99, {}, { pri: 10 + c.lr, px: 11, a: 's', dy: 0 }); });
-  W.rivers.forEach((r) => addL(r.lx, r.ly, r.n, 'rivl rv', r.len > 120 ? 1.3 : 2.2, 99, { 'data-river': r.id }));
+  W.rivers.forEach((r) => addL(r.lx, r.ly, r.n, 'rivl rv', r.minor ? 2.8 : r.len > 120 ? 1.3 : 2.2, 99, { 'data-river': r.id }));
   W.lakes.forEach((l) => l.n && addL(l.lx, l.ly, l.n, 'lakel', 2));
   W.territories.forEach((t) => t.n && !t.ant && addL(t.lx, t.ly, t.n, 'nm', t.id === 'GRL' ? 0.55 : 2.4));
   addL(W.W / 2 - 300, W.H / 2 - 6, 'Екватор', 'rivl', 1.2);
+
+  // ---------- sličice: znamenitosti, životinje, Srbija ----------
+  const URL_ = {};
+  const iconUrl = (c) => URL_[c] || (URL_[c] = URL.createObjectURL(new Blob([(window.ICONS || {})[c] || ''], { type: 'image/svg+xml' })));
+  const addPin = ([x, y], code, size, cls, zmin, zmax, data) => {
+    const im = sv('image', Object.assign({ href: iconUrl(code), class: 'pin ' + cls, style: `--x:${x};--y:${y};--s:${size}` }, data));
+    gIco.append(im); labels.push({ t: im, zmin, zmax }); return im;
+  };
+  W.landmarks.forEach((l) => {
+    addPin(l.xy, l.ic, l.w ? 36 : 28, 'lmk', -9, 99, { 'data-lm': l.id });
+    addL(l.xy[0], l.xy[1], l.n, 'lml lmk', 1.9).setAttribute('dy', '1.9em');
+  });
+  W.animals.forEach((a, i) => a.pts.forEach((pt) => addPin(pt, a.ic, 30, 'anm', -9, 2.4, { 'data-an': i })));
+  // Srbija detaljno
+  W.srb.cities.forEach((c) => {
+    gSrb.append(sv('circle', { cx: c.xy[0], cy: c.xy[1], class: 'scity t' + c.t }));
+    labels.push({ t: gSrb.lastChild, zmin: [0, 2.3, 2.7, 3.1][c.t], zmax: 99 });
+    addL(c.xy[0], c.xy[1], '\u2002' + c.n, 'capl sct', [0, 2.3, 2.7, 3.1][c.t], 99, {}, { pri: 20 + c.t, px: 11, a: 's', dy: 0 });
+  });
+  W.srb.mountains.forEach((m, i) => {
+    addPin(m.xy, '1F3D4', 24, 'mtn', 2.6, 99, { 'data-mt': i });
+    addL(m.xy[0], m.xy[1], m.n, 'mtl', 2.6, 99, { dy: '1.6em' }, { pri: 30, px: 11, a: 'm', dy: 1.6 });
+  });
+  W.srb.sights.forEach((g) => {
+    addPin(g.xy, g.ic, 28, 'lmk', 2.9, 99, { 'data-ss': g.id });
+    addL(g.xy[0], g.xy[1], g.n, 'lml lmk', 3.5).setAttribute('dy', '1.9em');
+  });
 
   const byPri = [...labels].sort((a, b) => (a.col ? a.col.pri : -1) - (b.col ? b.col.pri : -1));
   // ---------- stanje prikaza ----------
@@ -167,13 +194,19 @@ function makeMap(host, opt = {}) {
   function hit(x, y) {
     const els = document.elementsFromPoint(x, y);
     let res = { type: 'sea' };
-    for (const t of els) {
+    // sličice imaju prednost nad državom ispod njih
+    const pin = els.find((t) => svg.contains(t) && t.tagName === 'image');
+    for (const t of pin ? [pin, ...els] : els) {
       if (!svg.contains(t)) continue;
       const d = t.dataset || {};
       if (d.id) { res = { type: 'country', id: d.id }; break; }
       if (d.ocean) { res = { type: 'ocean', id: d.ocean }; break; }
       if (d.river && (t.tagName === 'text' || Math.log2(k / k0) >= 2)) { res = { type: 'river', id: d.river }; break; }
       if (d.ter) { res = { type: 'territory', id: d.ter }; break; }
+      if (d.lm) { res = { type: 'landmark', id: d.lm }; break; }
+      if (d.an) { res = { type: 'animal', id: +d.an }; break; }
+      if (d.ss) { res = { type: 'sight', id: d.ss }; break; }
+      if (d.mt) { res = { type: 'mountain', id: +d.mt }; break; }
     }
     // mala država blizu prsta: lakše pogađanje
     if (res.type === 'sea' || res.type === 'territory') {

@@ -132,3 +132,15 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;paddin
 .pp{background:#F6EEFB;border-radius:14px;padding:8px 12px;line-height:1.3}
 .pp b{display:block;font-size:17px;font-weight:900}
 .pp span{font-size:15px;font-weight:700;color:var(--ink2)}
+
+/* ---------- sličice na mapi ---------- */
+.mapsvg .pin{width:calc(var(--s) * 1px / var(--k));height:calc(var(--s) * 1px / var(--k));x:calc(var(--x) * 1px - var(--s) * .5px / var(--k));y:calc(var(--y) * 1px - var(--s) * .5px / var(--k));cursor:pointer;filter:drop-shadow(0 calc(1px / var(--k)) calc(1.5px / var(--k)) rgba(0,0,0,.35))}
+.mapsvg .lbl.lml{font-size:calc(11px / var(--k));fill:#5a3a12}
+.mapsvg .lbl.mtl{font-size:calc(11px / var(--k));fill:#6b4a2a;font-style:italic}
+.mapsvg .scity{fill:#1F3047;stroke:#fff;stroke-width:1.2;vector-effect:non-scaling-stroke;r:calc(3px / var(--k));pointer-events:none}
+.mapsvg .scity.t1{r:calc(4.5px / var(--k))}
+.mapsvg.noLm .lmk,.mapsvg.noAn .anm{display:none}
+.lmhead{display:flex;align-items:center;gap:12px}
+.lmhead .lmic{width:64px;height:64px;flex:0 0 64px;background:rgba(255,255,255,.85);border-radius:16px;padding:6px}
+.lmhead .lmic svg{width:100%;height:100%}
+.wonder{display:inline-block;background:#FFD84D;color:#5a4300;font-weight:900;font-size:14px;border-radius:12px;padding:4px 10px;margin-top:6px}
